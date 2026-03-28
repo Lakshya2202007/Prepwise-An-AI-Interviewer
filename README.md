@@ -1,16 +1,16 @@
 # AI-Powered Real-Time Interview Platform
 
 <div align="center">
-  <img src="public/pytai-logo-promo.png" alt="Pytai Logo" width="100%" />
+  <img src="public/pytai-logo-promo.png" alt="Prepwise Logo" width="100%" />
 </div>
 
 ## Overview
 
-**Pytai** is an intelligent voice-driven interview platform that helps companies assess candidates in real time using conversational AI. The platform enables automated, consistent, and scalable interviews with dynamic questioning, real-time voice interaction, and comprehensive candidate scoring.
+**Prepwise** is an intelligent voice-driven interview platform that helps companies assess candidates in real time using conversational AI. The platform enables automated, consistent, and scalable interviews with dynamic questioning, real-time voice interaction, and comprehensive candidate scoring.
 
-[![PYTAI Screenshot](./public/pytai-site-preview-2.png)](https://pytai.space/)
+[![PREPWISE Screenshot](./public/pytai-site-preview-2.png)](https://pytai.space/)
 
-By simulating realistic interview scenarios, Pytai helps:
+By simulating realistic interview scenarios, Prepwise helps:
 - **Candidates** practice and improve their interview skills
 - **Recruiters** standardize their assessment process
 - **Companies** make more informed hiring decisions
@@ -82,6 +82,8 @@ GOOGLE_API_KEY=your_google_api_key
 
 # Vapi
 VAPI_API_KEY=your_vapi_api_key
+NEXT_PUBLIC_VAPI_WEB_TOKEN=your_vapi_web_token
+NEXT_PUBLIC_VAPI_WORKFLOW_ID=your_vapi_workflow_id
 ```
 
 4. Start the development server:
@@ -116,7 +118,7 @@ app-ai-interviews/
 
 ## AI Voice Integration
 
-Pytai uses a sophisticated AI voice integration system:
+Prepwise uses a sophisticated AI voice integration system:
 
 1. The `Agent` component initializes the voice interface and manages the conversation
 2. Interview questions are dynamically generated based on the selected role and tech stack
@@ -180,5 +182,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 Built with ❤️ using [JSMastery](https://www.youtube.com/@javascriptmastery/videos), Next.js 15, Vapi AI and Google Gemini
 
-© 2025 Pytai AI by Sergey. All rights reserved.</p>
+© 2025 Prepwise AI by Sergey. All rights reserved.</p>
 

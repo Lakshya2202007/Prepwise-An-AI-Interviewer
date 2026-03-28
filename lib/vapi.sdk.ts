@@ -1,11 +1,13 @@
-import Vapi from "@vapi-ai/web";
+import Vapi from '@vapi-ai/web';
 
-// Create a singleton instance to prevent KrispSDK duplication
-let vapiInstance: Vapi | null = null;
+const webToken =
+	process.env.NEXT_PUBLIC_VAPI_WEB_TOKEN ?? process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
 
-export const vapi = (() => {
-  if (!vapiInstance) {
-    vapiInstance = new Vapi(process.env.NEXT_PUBLIC_VAPI_WEB_TOKEN!);
-  }
-  return vapiInstance;
-})();
+if (!webToken) {
+	throw new Error(
+		'Missing Vapi browser token. Set NEXT_PUBLIC_VAPI_WEB_TOKEN in your environment.'
+	);
+}
+
+
+export const vapi = new Vapi(webToken);

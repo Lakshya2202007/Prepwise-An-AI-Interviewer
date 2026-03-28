@@ -1,15 +1,24 @@
 "use server";
 
 import { generateObject } from "ai";
-import { google } from "@ai-sdk/google";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 import { db } from "@/firebase/admin";
 import { feedbackSchema } from "@/constants";
+
+const google = createGoogleGenerativeAI({
+  apiKey:
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY,
+});
 
 export async function createFeedback(params: CreateFeedbackParams) {
   const { interviewId, userId, transcript, feedbackId } = params;
 
   try {
+    if (!interviewId || !userId) {
+      return { success: false, error: "Missing interview or user identity for feedback generation." };
+    }
+
     const formattedTranscript = transcript
       .map(
         (sentence: { role: string; content: string }) =>
@@ -74,12 +83,12 @@ export async function createFeedback(params: CreateFeedbackParams) {
         Transcript:
         ${formattedTranscript}
 
-        Please score the candidate from 0 to 100 in the following areas. Do not add categories other than the ones provided:
-        - **Communication Skills**: Clarity, articulation, structured responses, appropriate technical vocabulary.
-        - **Technical Knowledge**: Deep understanding of key concepts, accurate explanations, awareness of best practices.
-        - **Problem-Solving**: Ability to analyze problems, propose effective solutions, consider edge cases and alternatives.
-        - **Cultural & Role Fit**: Alignment with company values, teamwork indicators, understanding of the role.
-        - **Confidence & Clarity**: Confidence in responses, engagement, clarity of thought, minimal hesitation.
+        Please score the candidate from 0 to 100 in the following areas. Use these category names exactly and in this order:
+        - Communication Skills: Clarity, articulation, structured responses, appropriate technical vocabulary.
+        - Technical Knowledge: Deep understanding of key concepts, accurate explanations, awareness of best practices.
+        - Problem Solving: Ability to analyze problems, propose effective solutions, consider edge cases and alternatives.
+        - Cultural Fit: Alignment with company values, teamwork indicators, understanding of the role.
+        - Confidence and Clarity: Confidence in responses, engagement, clarity of thought, minimal hesitation.
         
         For candidates who demonstrate exceptional mastery in all areas, do not hesitate to award scores in the 90-100 range.
         `,
@@ -111,7 +120,8 @@ export async function createFeedback(params: CreateFeedbackParams) {
     return { success: true, feedbackId: feedbackRef.id };
   } catch (error) {
     console.error("Error saving feedback:", error);
-    return { success: false };
+    const errorMessage = error instanceof Error ? error.message : "Unknown feedback generation error.";
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -142,9 +152,13 @@ export async function getFeedbackByInterviewId(
 export async function getLatestInterviews(
   params: GetLatestInterviewsParams
 ): Promise<Interview[] | null> {
-  // Use environment variable with fallback to 200 if not provided
-  const defaultLimit = Number(process.env.NEXT_PUBLIC_MAX_INTERVIEWS);
-  const { userId, limit = defaultLimit } = params;
+  const envLimit = Number.parseInt(process.env.NEXT_PUBLIC_MAX_INTERVIEWS ?? "", 10);
+  const defaultLimit = Number.isInteger(envLimit) && envLimit > 0 ? envLimit : 200;
+  const requestedLimit = params.limit || 0;
+  const limit = Number.isInteger(requestedLimit) && requestedLimit > 0
+    ? requestedLimit
+    : defaultLimit;
+  const { userId } = params;
 
   const interviews = await db
     .collection("interviews")
@@ -166,7 +180,7 @@ export async function getInterviewsByUserId(
   const interviews = await db
     .collection("interviews")
     .where("userId", "==", userId)
-    .orderBy("createdAt", "desc")
+    .orderBy("createdAt", "desc") 
     .get();
 
   return interviews.docs.map((doc) => ({

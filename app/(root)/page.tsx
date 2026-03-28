@@ -75,7 +75,7 @@ async function Home() {
 
         <Image
           src="/robot.png"
-          alt="Robot Pytai"
+          alt="Robot Prepwise"
           width={400}
           height={254}
           className="w-[250px] sm:w-[400px] mx-auto mb-0 sm:mx-0 sm:mb-4 md:mb-0"

@@ -39,6 +39,9 @@ const Agent = ({
   const [lastMessage, setLastMessage] = useState<string>("");
   const [showCallHint, setShowCallHint] = useState(true);
   const [lastActivityTimestamp, setLastActivityTimestamp] = useState<number>(Date.now());
+  const vapiWebToken =
+    process.env.NEXT_PUBLIC_VAPI_WEB_TOKEN ?? process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+  const vapiWorkflowId = process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID;
   const INACTIVITY_TIMEOUT = process.env.NEXT_PUBLIC_VAPI_INACTIVITY_TIMEOUT 
                             ? parseInt(process.env.NEXT_PUBLIC_VAPI_INACTIVITY_TIMEOUT) 
                             : 10000; // time of inactivity will end the call
@@ -181,21 +184,21 @@ const Agent = ({
         id: "feedback-toast"
       });
 
-      const { success, feedbackId: id } = await createFeedback({
+      const result = await createFeedback({
         interviewId: interviewId!,
         userId: userId!,
         transcript: messages,
         feedbackId,
       });
 
-      if (success && id) {
+      if (result.success && result.feedbackId) {
         toast.success("Feedback generated successfully!", {
           id: "feedback-toast"
         });
         router.push(`/interview/${interviewId}/feedback`);
       } else {
-        console.log("Error saving feedback");
-        toast.error("Failed to generate feedback", {
+        console.log("Error saving feedback", result);
+        toast.error(result.error || "Failed to generate feedback", {
           id: "feedback-toast"
         });
         router.push("/");
@@ -218,31 +221,51 @@ const Agent = ({
   const handleCall = async () => {
     setCallStatus(CallStatus.CONNECTING);
 
-    if (type === "generate") {
-      toast.loading("Generating your interview questions...", {
-        duration: 10000,
-        id: "generate-toast"
-      });
-      
-      await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
-        variableValues: {
-          username: userName,
-          userid: userId,
-        },
-      });
-    } else {
-      let formattedQuestions = "";
-      if (questions) {
-        formattedQuestions = questions
-          .map((question) => `- ${question}`)
-          .join("\n");
-      }
+    if (!vapiWebToken) {
+      toast.error("Missing Vapi web token. Add NEXT_PUBLIC_VAPI_WEB_TOKEN to your env.");
+      setCallStatus(CallStatus.INACTIVE);
+      return;
+    }
 
-      await vapi.start(interviewer, {
-        variableValues: {
-          questions: formattedQuestions,
-        },
+    try {
+      if (type === "generate") {
+        if (!vapiWorkflowId) {
+          toast.error("Missing workflow ID. Add NEXT_PUBLIC_VAPI_WORKFLOW_ID to your env.");
+          setCallStatus(CallStatus.INACTIVE);
+          return;
+        }
+
+        toast.loading("Generating your interview questions...", {
+          duration: 10000,
+          id: "generate-toast"
+        });
+
+        await vapi.start(vapiWorkflowId, {
+          variableValues: {
+            username: userName,
+            userid: userId,
+          },
+        });
+      } else {
+        let formattedQuestions = "";
+        if (questions) {
+          formattedQuestions = questions
+            .map((question) => `- ${question}`)
+            .join("\n");
+        }
+
+        await vapi.start(interviewer, {
+          variableValues: {
+            questions: formattedQuestions,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Failed to start Vapi call:", error);
+      toast.error("Could not start interview call. Check Vapi token, settings, and mic permissions.", {
+        id: "vapi-start-error",
       });
+      setCallStatus(CallStatus.INACTIVE);
     }
   };
 
